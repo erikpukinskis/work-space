@@ -44,9 +44,10 @@ module.exports = library.export(
 
     workSpace.get = get
 
-    workSpace.focusOn = function(ref, text) {
+    workSpace.focusOn = function(ref, listId, text) {
       var space = get(ref)
       space.currentTask = text
+      space.currentTaskListId = listId
     }
 
     return workSpace

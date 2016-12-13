@@ -37,7 +37,7 @@ library.using(
 
         var task = getTask(space, list)
 
-        workSpace.focusOn(space, task)
+        workSpace.focusOn(space, list.id, task)
 
         var bridge = baseBridge.forResponse(response)
 
@@ -75,11 +75,7 @@ library.using(
 
       var putBack = element("a.button", "Put it back", {href: "/work-space/"+space.id+"/dont-want/"+encodeURIComponent(space.currentTask)})
 
-      var start = element("a.button", "Stark working", {href: "/work-space/"+space.id+"/start-working"})
-
-      if (space.isPersisted) {
-        bridge.changePath("/work-space/"+space.id)
-      }
+      var start = element("a.button", "Start working", {href: "/work-space/"+space.id+"/start-working"})
 
       bridge.send([job, putBack, start])
     }
@@ -102,23 +98,46 @@ library.using(
           task = list.tasks[0]
         }
 
-        workSpace.focusOn(space, task)
-
-        if (space.saving) {
-          clearTimeout(space.skipSaveTimeout)
-        } else {
-          space.saving = true
-        }
-        
-        space.skipSaveTimeout = setTimeout(saveSkip.bind(null, space, list.id), 3000)
-
-        console.log("Skipping to", nextIndex)
+        workSpace.focusOn(space, list.id, task)
 
         var bridge = baseBridge.forResponse(response)
+
+        if (space.isPersisted) {
+          saveSkipEventually(space, list.id)
+          bridge.changePath("/work-space/"+space.id)
+        }
+
+        console.log("Skipping to", nextIndex)
 
         sendWorkSpace(space, bridge)
       }
     )
+
+    site.addRoute("get",
+      "/work-space/:id/start-working",
+      function(request, response) {
+        var space = workSpace.get(request.params.id)
+        var list = releaseChecklist.get("putw4e")
+
+        saveSkipEventually(space, list.id)
+
+        var bridge = baseBridge.forResponse(response)
+
+        bridge.changePath("/work-space/"+space.id)
+
+        sendWorkSpace(space, bridge)
+      }
+    )
+
+    function saveSkipEventually(space, listId) {
+      if (space.saving) {
+        clearTimeout(space.skipSaveTimeout)
+      } else {
+        space.saving = true
+      }
+      
+      space.skipSaveTimeout = setTimeout(saveSkip.bind(null, space, listId), 3000)
+    }
 
     function saveSkip(space, listId) {
       space.saving = false
