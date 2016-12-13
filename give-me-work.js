@@ -1,8 +1,8 @@
 var library = require("module-library")(require)
 
 library.using(
-  ["web-element", "web-site", "browser-bridge", "basic-styles", "tell-the-universe", "release-checklist"],
-  function(element, WebSite, baseBridge, basicStyles, tellTheUniverse,releaseChecklist) {
+  ["web-element", "web-site", "browser-bridge", "basic-styles", "tell-the-universe", "release-checklist", "./work-space"],
+  function(element, WebSite, baseBridge, basicStyles, tellTheUniverse,releaseChecklist, workSpace) {
 
     var site = WebSite.provision("/give-me-work")
 
@@ -11,7 +11,8 @@ library.using(
     tellTheUniverse = tellTheUniverse
       .called("project-process")
       .withNames({
-        releaseChecklist: "release-checklist"
+        releaseChecklist: "release-checklist",
+        workSpace: "./work-space",
       })
 
     tellTheUniverse.load()
@@ -30,57 +31,105 @@ library.using(
       "/give-me-work/programming",
       function(request, response) {
 
+        var space = workSpace()
+
         var list = releaseChecklist.get("putw4e")
+
+        var task = getTask(space, list)
+
+        workSpace.focusOn(space, task)
 
         var bridge = baseBridge.forResponse(response)
 
-        sendNextTask(list, bridge)
+        sendWorkSpace(space, bridge)
       }
     )
 
-    function sendNextTask(list, bridge, response) {
+    site.addRoute("get",
+      "/work-space/:id",
+      function(request, response) {
+        var space = workSpace.get(request.params.id)
+
+        sendWorkSpace(space, baseBridge.forResponse(response))
+      }
+    )
+
+    function getTask(space, list) {
       if (typeof skipTo == "undefined") {
-        skipTo = list.tasks.length - 1
+        skipTo = 35
+        console.log("Skipping to ", skipTo)
       }
 
       for(var i=skipTo; i<list.tasks.length; i++) {
         if (list.tasksCompleted[i]) {
           continue
         }
-        var task = list.tasks[i]
-        break
+        return list.tasks[i]
       }
+    }
 
-      var job = element("p", "Make it so «"+task+"» is possible")
+    function sendWorkSpace(space, bridge) {
+
+      var job = element("p", "Make it so «"+space.currentTask+"» is possible")
       job.appendStyles({"min-height": "2.5em"})
 
-      var button = element("a.button", "Put it back", {href: "/give-me-work/dont-want/"+encodeURIComponent(task)})
+      var putBack = element("a.button", "Put it back", {href: "/work-space/"+space.id+"/dont-want/"+encodeURIComponent(space.currentTask)})
 
-      bridge.send([job, button])
+      var start = element("a.button", "Stark working", {href: "/work-space/"+space.id+"/start-working"})
+
+      if (space.isPersisted) {
+        bridge.changePath("/work-space/"+space.id)
+      }
+
+      bridge.send([job, putBack, start])
     }
 
     var skipTo
 
     site.addRoute("get",
-      "/give-me-work/dont-want/:text",
+      "/work-space/:spaceId/dont-want/:text",
       function(request, response) {
-        var list = releaseChecklist.get("putw4e")
 
+        var list = releaseChecklist.get("putw4e")
+        var space = workSpace.get(request.params.spaceId)
         var task = request.params.text
 
-        var i = list.tasks.indexOf(task)
+        var nextIndex = list.tasks.indexOf(task) + 1
+        var task = list.tasks[nextIndex]
 
-        skipTo = i+1
-        if (!list.tasks[skipTo]) {
-          skipTo = 0
+        if (!task) {
+          nextIndex = 0
+          task = list.tasks[0]
         }
 
-        var bridge = baseBridge.forResponse(response)
-        bridge.changePath("/give-me-work/programming")
+        workSpace.focusOn(space, task)
 
-        sendNextTask(list, bridge)
+        if (space.saving) {
+          clearTimeout(space.skipSaveTimeout)
+        } else {
+          space.saving = true
+        }
+        
+        space.skipSaveTimeout = setTimeout(saveSkip.bind(null, space, list.id), 3000)
+
+        console.log("Skipping to", nextIndex)
+
+        var bridge = baseBridge.forResponse(response)
+
+        sendWorkSpace(space, bridge)
       }
     )
+
+    function saveSkip(space, listId) {
+      space.saving = false
+
+      if (!space.isPersisted) {
+        tellTheUniverse("workSpace", space.id)
+        space.isPersisted = true
+      }
+
+      tellTheUniverse("workSpace.focusOn", space.id, listId, space.currentTask)
+    }
 
     WebSite.megaBoot()
   }
