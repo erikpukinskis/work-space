@@ -1,19 +1,10 @@
 {
   "name": "work-space",
   "version": "0.1.0",
-  "description": "Get a job to do",
+  "description": "Keep track of what people are working on",
   "main": "work-space.js",
   "dependencies": {
-    "module-library": "*",
-    "web-element": "*",
-    "web-site": "*",
-    "browser-bridge": "*",
-    "basic-styles": "*",
-    "tell-the-universe": "*",
-    "release-checklist": "*"
-  },
-  "scripts": {
-    "start": "env $(cat ../build-home/CREDENTIALS | xargs) node start"
+    "module-library": "*"
   },
   "repository": {
     "type": "git",

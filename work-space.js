@@ -50,12 +50,6 @@ module.exports = library.export(
       space.currentTaskListId = listId
     }
 
-    workSpace.bootServer = function(site) {
-      library.using(["./server"], function(bootServer) {
-        bootServer(site)
-      })
-    }
-
     return workSpace
   }
 )
