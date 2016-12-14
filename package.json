@@ -1,5 +1,5 @@
 {
-  "name": "give-me-work",
+  "name": "work-space",
   "version": "0.0.0",
   "description": "Get a job to do",
   "main": "work-space.js",
@@ -17,6 +17,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/erikpukinskis/give-me-work.git"
+    "url": "https://github.com/erikpukinskis/work-space.git"
   }
 }
