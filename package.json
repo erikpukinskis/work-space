@@ -13,7 +13,7 @@
     "release-checklist": "*"
   },
   "scripts": {
-    "give-me-work": "*"
+    "start": "env $(cat ../build-home/CREDENTIALS | xargs) node start"
   },
   "repository": {
     "type": "git",
