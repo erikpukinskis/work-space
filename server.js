@@ -90,7 +90,7 @@ module.exports = library.export(
 
           getNewTask(space, list, task)
 
-          tellTheUniverse("releaseChecklist.complete", list.id, task)
+          tellTheUniverse("releaseChecklist.checkOff", list.id, task)
 
           sendWorkSpace(space, baseBridge.forResponse(response))
         }

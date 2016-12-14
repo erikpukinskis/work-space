@@ -1,5 +1,9 @@
-var WebSite = require("web-site")
-var boot = require("./")
+var library = require("module-library")(require)
 
-WebSite.provision(boot)
-WebSite.megaBoot()
+library.using(
+  ["./", "web-site"],
+  function(workSpace, WebSite) {
+    WebSite.provision(workSpace.bootServer)
+    WebSite.megaBoot()
+  }
+)
