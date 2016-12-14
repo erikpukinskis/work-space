@@ -35,9 +35,7 @@ library.using(
 
         var list = releaseChecklist.get("putw4e")
 
-        var task = getTask(space, list)
-
-        workSpace.focusOn(space, list.id, task)
+        getNewTask(space, list, task)
 
         var bridge = baseBridge.forResponse(response)
 
@@ -54,31 +52,48 @@ library.using(
       }
     )
 
-    function getTask(space, list) {
-      if (typeof skipTo == "undefined") {
-        skipTo = 35
-        console.log("Skipping to ", skipTo)
-      }
-
-      for(var i=skipTo; i<list.tasks.length; i++) {
-        if (list.tasksCompleted[i]) {
-          continue
-        }
-        return list.tasks[i]
-      }
-    }
-
     function sendWorkSpace(space, bridge) {
+
+      if (space.isPersisted) {
+        bridge.changePath("/work-space/"+space.id)
+      }
 
       var job = element("p", "Make it so «"+space.currentTask+"» is possible")
       job.appendStyles({"min-height": "2.5em"})
 
       var putBack = element("a.button", "Put it back", {href: "/work-space/"+space.id+"/dont-want/"+encodeURIComponent(space.currentTask)})
 
-      var start = element("a.button", "Start working", {href: "/work-space/"+space.id+"/start-working"})
+      var body = [job, putBack]
 
-      bridge.send([job, putBack, start])
+      if (space.isPersisted) {
+        var complete = element("a.button", "It's done", {href: "/work-space/"+space.id+"/mark-completed/"+encodeURIComponent(space.currentTask)})
+
+        body.push(complete)
+      } else {
+        var start = element("a.button", "Start working", {href: "/work-space/"+space.id+"/start-working"})
+
+        body.push(start)
+      }
+
+      bridge.send(body)
     }
+
+    site.addRoute("get",
+      "/work-space/:id/mark-completed/:text",
+      function(request, response) {
+        var task = request.params.text
+        var space = workSpace.get(request.params.id)
+        var list = releaseChecklist.get("putw4e")
+
+        releaseChecklist.checkOff(list, task)
+
+        getNewTask(space, list, task)
+
+        tellTheUniverse("releaseChecklist.complete", list.id, task)
+
+        sendWorkSpace(space, baseBridge.forResponse(response))
+      }
+    )
 
     var skipTo
 
@@ -90,28 +105,47 @@ library.using(
         var space = workSpace.get(request.params.spaceId)
         var task = request.params.text
 
-        var nextIndex = list.tasks.indexOf(task) + 1
-        var task = list.tasks[nextIndex]
-
-        if (!task) {
-          nextIndex = 0
-          task = list.tasks[0]
-        }
-
-        workSpace.focusOn(space, list.id, task)
+        getNewTask(space, list, task)
 
         var bridge = baseBridge.forResponse(response)
-
-        if (space.isPersisted) {
-          saveSkipEventually(space, list.id)
-          bridge.changePath("/work-space/"+space.id)
-        }
 
         console.log("Skipping to", nextIndex)
 
         sendWorkSpace(space, bridge)
       }
     )
+
+    function getNewTask(space, list, oldTask) {
+
+      if (typeof skipTo == "undefined") {
+        skipTo = 0
+      }
+
+      var whereWeStarted = skipTo
+      while (list.tasksCompleted[skipTo]) {
+        skipTo++
+        if (!list.tasks[skipTo]) {
+          skipTo = 0
+        }
+        if (skipTo == whereWeStarted) {
+          throw new Error("No tasks available")
+        }
+      }
+
+      var nextIndex = list.tasks.indexOf(oldTask) + 1
+      var newtask = list.tasks[nextIndex]
+
+      if (!newtask) {
+        nextIndex = 0
+        newtask = list.tasks[0]
+      }
+
+      workSpace.focusOn(space, list.id, newtask)
+
+      if (space.isPersisted) {
+        saveSkipEventually(space, list.id)
+      }
+    }
 
     site.addRoute("get",
       "/work-space/:id/start-working",
