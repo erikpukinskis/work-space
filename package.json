@@ -1,6 +1,6 @@
 {
   "name": "work-space",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Keep track of what people are working on",
   "main": "work-space.js",
   "dependencies": {
