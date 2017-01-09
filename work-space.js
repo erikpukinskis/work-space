@@ -24,6 +24,12 @@ module.exports = library.export(
       space.id = id
     }
 
+    workSpace.eachId = function(callback) {
+      for(var id in spaces) {
+        callback(id)
+      }
+    }
+
     function get(ref) {
       if (!ref) {
         throw new Error("No ref!")
